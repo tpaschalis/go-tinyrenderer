@@ -26,20 +26,32 @@ func line(x0, y0, x1, y1 int, canvas *image.RGBA, c color.RGBA) {
 	error2 := 0
 	y := y0
 
-	for x := x0; x <= x1; x++ {
-		if steep {
+	if steep {
+		for x := x0; x <= x1; x++ {
 			canvas.Set(y, x, c)
-		} else {
-			canvas.Set(x, y, c)
+			error2 += derror2
+			if error2 > dx {
+				if y1 > y0 {
+					y += 1
+					error2 -= 2 * dx
+				} else {
+					y += -1
+					error2 -= 2 * dx
+				}
+			}
 		}
-		error2 += derror2
-		if error2 > dx {
-			if y1 > y0 {
-				y += 1
-				error2 -= 2 * dx
-			} else {
-				y += -1
-				error2 -= 2 * dx
+	} else {
+		for x := x0; x <= x1; x++ {
+			canvas.Set(x, y, c)
+			error2 += derror2
+			if error2 > dx {
+				if y1 > y0 {
+					y += 1
+					error2 -= 2 * dx
+				} else {
+					y += -1
+					error2 -= 2 * dx
+				}
 			}
 		}
 	}
