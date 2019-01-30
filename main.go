@@ -8,10 +8,28 @@ import "image/color"
 import "image/png"
 
 func line(x0, y0, x1, y1 int, canvas *image.RGBA, c color.RGBA) {
+	steep := false
+
+	if abs(x0-x1) < abs(y0-y1) {
+		// if the line is steep, we transpose the image
+		x0, y0 = y0, x0
+		x1, y1 = y1, x1
+		steep = true
+	}
+
+	if x0 > x1 {
+		x0, x1 = x1, x0
+		y0, y1 = y1, y0
+	}
+
 	for x := x0; x <= x1; x++ {
 		t := (float64(x) - float64(x0)) / (float64(x1) - float64(x0))
 		y := float64(y0)*(1.0-t) + float64(y1)*t
-		canvas.Set(int(x), int(y), c)
+		if steep {
+			canvas.Set(int(y), int(x), c)
+		} else {
+			canvas.Set(int(x), int(y), c)
+		}
 	}
 }
 
@@ -24,6 +42,17 @@ func flipVertically(canvas *image.RGBA) *image.RGBA {
 		}
 	}
 	return flipped
+}
+
+func abs(x int) int {
+	if x < 0 {
+		return -1 * x
+	}
+	return x
+}
+
+func swap(a, b int) (int, int) {
+	return b, a
 }
 
 func main() {
