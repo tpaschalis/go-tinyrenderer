@@ -8,9 +8,8 @@ import "image/color"
 import "image/png"
 
 func line(x0, y0, x1, y1 int, canvas *image.RGBA, c color.RGBA) {
-	a := 0.01 // run it for a = 0.1 as well, to see the line thinning out
-	for t := 0.0; t < 1.0; t += a {
-		x := float64(x0)*(1.0-t) + float64(x1)*t
+	for x := x0; x <= x1; x++ {
+		t := (float64(x) - float64(x0)) / (float64(x1) - float64(x0))
 		y := float64(y0)*(1.0-t) + float64(y1)*t
 		canvas.Set(int(x), int(y), c)
 	}
@@ -49,6 +48,8 @@ func main() {
 
 	img.Set(52, 41, red)
 	line(13, 20, 80, 40, img, white)
+	line(20, 13, 40, 80, img, red)
+	line(80, 40, 13, 20, img, red)
 	img = flipVertically(img)
 
 	png.Encode(f, img)
