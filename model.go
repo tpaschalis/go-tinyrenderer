@@ -9,20 +9,19 @@ import "strconv"
 type Model struct {
 	Nverts int
 	Nfaces int
-	Verts []Vertex
-	Faces []Face
+	Verts  []Vertex
+	Faces  []Face
 }
 
 type Vertex struct {
-	id int
+	id     int
 	coords r3.Vector
 }
 
 type Face struct {
-	id int
+	id         int
 	components [][]int
 }
-
 
 func readObj(filepath string) Model {
 	file, err := os.Open(filepath)
@@ -36,8 +35,8 @@ func readObj(filepath string) Model {
 	var verts []Vertex
 	var faces []Face
 	scanner := bufio.NewScanner(file)
-	vertNo:=0
-	faceNo:=0
+	vertNo := 0
+	faceNo := 0
 	for scanner.Scan() {
 		current = scanner.Text()
 		lines = append(lines, current)
@@ -62,7 +61,7 @@ func readObj(filepath string) Model {
 			faceNo += 1
 			tmp := strings.Fields(current)
 			face := make([][]int, len(tmp)-1)
-			for i:=0; i<len(face); i++ {
+			for i := 0; i < len(face); i++ {
 				tmpF := strings.Split(tmp[i+1], "/") // First entry is the "f " tag
 				face[i] = make([]int, len(tmpF))
 				for j, s := range tmpF {
@@ -82,5 +81,3 @@ func readObj(filepath string) Model {
 
 	return Model{len(verts), len(faces), verts, faces}
 }
-
-
