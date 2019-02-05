@@ -88,13 +88,15 @@ func swap(a, b int) (int, int) {
 }
 
 func main() {
-	w, h := 100, 100
+	w, h := 800, 800
+	fw, fh := 800., 800.
 
 	img := image.NewRGBA(image.Rect(0, 0, w, h))
 
 	white := color.RGBA{255, 255, 255, 255}
 	_ = white
 	red := color.RGBA{255, 0, 0, 255}
+	_ = red
 
 	f, err := os.OpenFile("out.png", os.O_WRONLY|os.O_CREATE, 0600)
 	if err != nil {
@@ -102,17 +104,39 @@ func main() {
 	}
 	defer f.Close()
 
+	// Set black background, otherwise it's transparert and appears like a checkerboard pattern.
 	for i := 0; i < w; i++ {
 		for j := 0; j < h; j++ {
 			img.Set(i, j, color.RGBA{0, 0, 0, 255})
 		}
 	}
 
+	Model := readObj("obj/human_head.obj")
+
+
+	var x0, y0, x1, y1 int
+	for i := 0; i < Model.Nfaces; i++ {
+		face := Model.Faces[i]
+		var tmp []int
+		for i := range face.components {
+			tmp = append(tmp, face.components[i][0])
+		}
+
+		for j := 0; j < 3; j++ {
+			v0 := Model.Verts[tmp[j]-1].coords       // Zero-subscriptable
+			v1 := Model.Verts[tmp[(j+1)%3]-1].coords // Probably should become a map[int]r3.Vector
+			fmt.Println(v0, v1)
+			x0 = int((v0.X + 1.) * fw / 2.)
+			y0 = int((v0.Y + 1.) * fh / 2.)
+			x1 = int((v1.X + 1.) * fw / 2.)
+			y1 = int((v1.Y + 1.) * fh / 2.)
+			line(x0, y0, x1, y1, img, white)
+		}
+	}
+
 	line(20, 13, 40, 80, img, red)
 	line(80, 40, 13, 20, img, red)
 	img = flipVertically(img)
-
 	png.Encode(f, img)
-
 	fmt.Println("Success!")
 }
