@@ -9,6 +9,8 @@ import "image/png"
 
 import "github.com/golang/geo/r3"
 
+import "math/rand"
+
 func line(p0, p1 r3.Vector, canvas *image.RGBA, c color.RGBA) {
 	steep := false
 	if absf(p0.X-p1.X) < absf(p0.Y-p1.Y) {
@@ -148,10 +150,10 @@ func triangle(t0, t1, t2 r3.Vector, canvas *image.RGBA, c color.RGBA) {
 }
 
 func main() {
-	//w, h := 800, 800
-	//fw, fh := 800., 800.
-	w, h := 200, 200
-	fw, fh := 200., 200.
+	w, h := 800, 800
+	fw, fh := 800., 800.
+	//w, h := 200, 200
+	//fw, fh := 200., 200.
 	_, _, _, _ = w, h, fw, fh
 
 	img := image.NewRGBA(image.Rect(0, 0, w, h))
@@ -176,27 +178,28 @@ func main() {
 		}
 	}
 
-	//Model := readObj("obj/human_head.obj")
+	Model := readObj("obj/human_head.obj")
+	rand.Seed(1)
 
-	t0 := []r3.Vector{
-		{10, 70, 0},
-		{50, 160, 0},
-		{70, 80, 0},
-	}
-	t1 := []r3.Vector{
-		{180, 50, 0},
-		{150, 1, 0},
-		{70, 180, 0},
-	}
-	t2 := []r3.Vector{
-		{180, 150, 0},
-		{120, 160, 0},
-		{130, 180, 0},
+	for i:=0; i < Model.Nfaces; i++ {
+		face := Model.Faces[i]
+		var screen_coords []r3.Vector
+
+		var tmp []int
+		for i := range face.components {
+			tmp = append(tmp, face.components[i][0])
+		}
+
+		for j:=0; j<3; j++{
+			world_coords := Model.Verts[tmp[j]-1].coords
+			screen_coords = append(screen_coords, r3.Vector{
+										(world_coords.X+1.)*fw/2.,
+										(world_coords.Y+1.)*fh/2.,
+										0.})
+		}
+		triangle(screen_coords[0], screen_coords[1], screen_coords[2], img, color.RGBA{ uint8(rand.Intn(255)), uint8(rand.Intn(255)), uint8(rand.Intn(255)), 255})
 	}
 
-	triangle(t0[0], t0[1], t0[2], img, red)
-	triangle(t1[0], t1[1], t1[2], img, white)
-	triangle(t2[0], t2[1], t2[2], img, green)
 
 	img = flipVertically(img)
 	png.Encode(f, img)
