@@ -7,31 +7,32 @@ import "image"
 import "image/color"
 import "image/png"
 
-func line(x0, y0, x1, y1 int, canvas *image.RGBA, c color.RGBA) {
+import "github.com/golang/geo/r3"
+
+func line(p0, p1 r3.Vector, canvas *image.RGBA, c color.RGBA) {
 	steep := false
-	if abs(x0-x1) < abs(y0-y1) {
-		x0, y0 = y0, x0
-		x1, y1 = y1, x1
+	if absf(p0.X-p1.X) < absf(p0.Y-p1.Y) {
+		p0.X, p0.Y = p0.Y, p0.X
+		p1.X, p1.Y = p1.Y, p1.X
 		steep = true
 	}
 
-	if x0 > x1 {
-		x0, x1 = x1, x0
-		y0, y1 = y1, y0
+	if p0.X > p1.X {
+		p0, p1 = p1, p0
 	}
 
-	dx := x1 - x0
-	dy := y1 - y0
+	dx := int(p1.X - p0.X)
+	dy := int(p1.Y - p0.Y)
 	derror2 := 2 * abs(dy)
 	error2 := 0
-	y := y0
+	y := int(p0.Y)
 
 	if steep {
-		for x := x0; x <= x1; x++ {
+		for x := int(p0.X); x <= int(p1.X); x++ {
 			canvas.Set(y, x, c)
 			error2 += derror2
 			if error2 > dx {
-				if y1 > y0 {
+				if p1.Y > p0.Y {
 					y += 1
 					error2 -= 2 * dx
 				} else {
@@ -41,11 +42,11 @@ func line(x0, y0, x1, y1 int, canvas *image.RGBA, c color.RGBA) {
 			}
 		}
 	} else {
-		for x := x0; x <= x1; x++ {
+		for x := int(p0.X); x <= int(p1.X); x++ {
 			canvas.Set(x, y, c)
 			error2 += derror2
 			if error2 > dx {
-				if y1 > y0 {
+				if p1.Y > p0.Y {
 					y += 1
 					error2 -= 2 * dx
 				} else {
@@ -87,9 +88,18 @@ func swap(a, b int) (int, int) {
 	return b, a
 }
 
+func triangle(t0, t1, t2 r3.Vector, canvas *image.RGBA, c color.RGBA) {
+	line(t0, t1, canvas, c)
+	line(t1, t2, canvas, c)
+	line(t2, t0, canvas, c)
+}
+
 func main() {
-	w, h := 800, 800
-	fw, fh := 800., 800.
+	//w, h := 800, 800
+	//fw, fh := 800., 800.
+	w, h := 200, 200
+	fw, fh := 200., 200.
+	_, _, _, _ = w, h, fw, fh
 
 	img := image.NewRGBA(image.Rect(0, 0, w, h))
 
@@ -97,6 +107,8 @@ func main() {
 	_ = white
 	red := color.RGBA{255, 0, 0, 255}
 	_ = red
+	green := color.RGBA{0, 255, 0, 255}
+	_ = green
 
 	f, err := os.OpenFile("out.png", os.O_WRONLY|os.O_CREATE, 0600)
 	if err != nil {
@@ -111,31 +123,28 @@ func main() {
 		}
 	}
 
-	Model := readObj("obj/human_head.obj")
+	//Model := readObj("obj/human_head.obj")
 
-
-	var x0, y0, x1, y1 int
-	for i := 0; i < Model.Nfaces; i++ {
-		face := Model.Faces[i]
-		var tmp []int
-		for i := range face.components {
-			tmp = append(tmp, face.components[i][0])
-		}
-
-		for j := 0; j < 3; j++ {
-			v0 := Model.Verts[tmp[j]-1].coords       // Zero-subscriptable
-			v1 := Model.Verts[tmp[(j+1)%3]-1].coords // Probably should become a map[int]r3.Vector
-			fmt.Println(v0, v1)
-			x0 = int((v0.X + 1.) * fw / 2.)
-			y0 = int((v0.Y + 1.) * fh / 2.)
-			x1 = int((v1.X + 1.) * fw / 2.)
-			y1 = int((v1.Y + 1.) * fh / 2.)
-			line(x0, y0, x1, y1, img, white)
-		}
+	t0 := []r3.Vector{
+		{10, 70, 0},
+		{50, 160, 0},
+		{70, 80, 0},
+	}
+	t1 := []r3.Vector{
+		{180, 50, 0},
+		{150, 1, 0},
+		{70, 180, 0},
+	}
+	t2 := []r3.Vector{
+		{180, 150, 0},
+		{120, 160, 0},
+		{130, 180, 0},
 	}
 
-	line(20, 13, 40, 80, img, red)
-	line(80, 40, 13, 20, img, red)
+	triangle(t0[0], t0[1], t0[2], img, red)
+	triangle(t1[0], t1[1], t1[2], img, white)
+	triangle(t2[0], t2[1], t2[2], img, green)
+
 	img = flipVertically(img)
 	png.Encode(f, img)
 	fmt.Println("Success!")
