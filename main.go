@@ -120,18 +120,18 @@ func triangle(t0, t1, t2 r3.Vector, canvas *image.RGBA, c color.RGBA) {
 	var alpha, beta float64
 	var A, B r3.Vector
 
-	for i:=0; i <int(total_height); i++ {
-		second_half := float64(i) > (t1.Y-t0.Y) || t1.Y == t0.Y	// a boolean value
+	for i := 0; i < int(total_height); i++ {
+		second_half := float64(i) > (t1.Y-t0.Y) || t1.Y == t0.Y // a boolean value
 		if second_half {
 			seg_height = t2.Y - t1.Y
 		} else {
 			seg_height = t1.Y - t0.Y
 		}
-		alpha = float64(i)/float64(total_height)
+		alpha = float64(i) / float64(total_height)
 		if second_half {
-			beta = (float64(i)-(t1.Y - t0.Y)) / seg_height
+			beta = (float64(i) - (t1.Y - t0.Y)) / seg_height
 		} else {
-			beta = float64(i)/seg_height
+			beta = float64(i) / seg_height
 		}
 		A = r3.Vector.Add(t0, r3.Vector.Mul(r3.Vector.Sub(t2, t0), alpha))
 		if second_half {
@@ -143,7 +143,7 @@ func triangle(t0, t1, t2 r3.Vector, canvas *image.RGBA, c color.RGBA) {
 		if A.X > B.X {
 			A, B = B, A
 		}
-		for j:=A.X; j<=B.X; j++ {
+		for j := A.X; j <= B.X; j++ {
 			canvas.Set(int(j), int(t0.Y+float64(i)), c)
 		}
 	}
@@ -181,7 +181,7 @@ func main() {
 	Model := readObj("obj/human_head.obj")
 	rand.Seed(1)
 
-	for i:=0; i < Model.Nfaces; i++ {
+	for i := 0; i < Model.Nfaces; i++ {
 		face := Model.Faces[i]
 		var screen_coords []r3.Vector
 
@@ -190,16 +190,15 @@ func main() {
 			tmp = append(tmp, face.components[i][0])
 		}
 
-		for j:=0; j<3; j++{
+		for j := 0; j < 3; j++ {
 			world_coords := Model.Verts[tmp[j]-1].coords
 			screen_coords = append(screen_coords, r3.Vector{
-										(world_coords.X+1.)*fw/2.,
-										(world_coords.Y+1.)*fh/2.,
-										0.})
+				(world_coords.X + 1.) * fw / 2.,
+				(world_coords.Y + 1.) * fh / 2.,
+				0.})
 		}
-		triangle(screen_coords[0], screen_coords[1], screen_coords[2], img, color.RGBA{ uint8(rand.Intn(255)), uint8(rand.Intn(255)), uint8(rand.Intn(255)), 255})
+		triangle(screen_coords[0], screen_coords[1], screen_coords[2], img, color.RGBA{uint8(rand.Intn(255)), uint8(rand.Intn(255)), uint8(rand.Intn(255)), 255})
 	}
-
 
 	img = flipVertically(img)
 	png.Encode(f, img)
