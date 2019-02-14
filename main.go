@@ -88,10 +88,63 @@ func swap(a, b int) (int, int) {
 	return b, a
 }
 
+func swapf(a, b float64) (float64, float64) {
+	return b, a
+}
+
 func triangle(t0, t1, t2 r3.Vector, canvas *image.RGBA, c color.RGBA) {
-	line(t0, t1, canvas, c)
-	line(t1, t2, canvas, c)
-	line(t2, t0, canvas, c)
+	//line(t0, t1, canvas, c)
+	//line(t1, t2, canvas, c)
+	//line(t2, t0, canvas, c)
+	if t0.Y == t1.Y && t0.Y == t2.Y {
+		return
+	}
+
+	// bubble-sort vectors, according to their y-coordinate
+	if t0.Y > t1.Y {
+		t0, t1 = t1, t0
+	}
+
+	if t0.Y > t2.Y {
+		t0, t2 = t2, t0
+	}
+
+	if t1.Y > t2.Y {
+		t1, t2 = t2, t1
+	}
+	total_height := t2.Y - t0.Y
+
+	var seg_height float64
+	var alpha, beta float64
+	var A, B r3.Vector
+
+	for i:=0; i <int(total_height); i++ {
+		second_half := float64(i) > (t1.Y-t0.Y) || t1.Y == t0.Y	// a boolean value
+		if second_half {
+			seg_height = t2.Y - t1.Y
+		} else {
+			seg_height = t1.Y - t0.Y
+		}
+		alpha = float64(i)/float64(total_height)
+		if second_half {
+			beta = (float64(i)-(t1.Y - t0.Y)) / seg_height
+		} else {
+			beta = float64(i)/seg_height
+		}
+		A = r3.Vector.Add(t0, r3.Vector.Mul(r3.Vector.Sub(t2, t0), alpha))
+		if second_half {
+			B = r3.Vector.Add(t1, r3.Vector.Mul(r3.Vector.Sub(t2, t1), beta))
+		} else {
+			B = r3.Vector.Add(t0, r3.Vector.Mul(r3.Vector.Sub(t1, t0), beta))
+		}
+
+		if A.X > B.X {
+			A, B = B, A
+		}
+		for j:=A.X; j<=B.X; j++ {
+			canvas.Set(int(j), int(t0.Y+float64(i)), c)
+		}
+	}
 }
 
 func main() {
