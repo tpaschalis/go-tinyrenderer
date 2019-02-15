@@ -11,56 +11,6 @@ import "github.com/golang/geo/r3"
 
 import "math/rand"
 
-func line(p0, p1 r3.Vector, canvas *image.RGBA, c color.RGBA) {
-	steep := false
-	if absf(p0.X-p1.X) < absf(p0.Y-p1.Y) {
-		p0.X, p0.Y = p0.Y, p0.X
-		p1.X, p1.Y = p1.Y, p1.X
-		steep = true
-	}
-
-	if p0.X > p1.X {
-		p0, p1 = p1, p0
-	}
-
-	dx := int(p1.X - p0.X)
-	dy := int(p1.Y - p0.Y)
-	derror2 := 2 * abs(dy)
-	error2 := 0
-	y := int(p0.Y)
-
-	if steep {
-		for x := int(p0.X); x <= int(p1.X); x++ {
-			canvas.Set(y, x, c)
-			error2 += derror2
-			if error2 > dx {
-				if p1.Y > p0.Y {
-					y += 1
-					error2 -= 2 * dx
-				} else {
-					y += -1
-					error2 -= 2 * dx
-				}
-			}
-		}
-	} else {
-		for x := int(p0.X); x <= int(p1.X); x++ {
-			canvas.Set(x, y, c)
-			error2 += derror2
-			if error2 > dx {
-				if p1.Y > p0.Y {
-					y += 1
-					error2 -= 2 * dx
-				} else {
-					y += -1
-					error2 -= 2 * dx
-				}
-			}
-		}
-	}
-
-}
-
 func flipVertically(canvas *image.RGBA) *image.RGBA {
 	bounds := canvas.Bounds()
 	flipped := image.NewRGBA(image.Rect(0, 0, bounds.Max.X, bounds.Max.Y))
@@ -95,9 +45,6 @@ func swapf(a, b float64) (float64, float64) {
 }
 
 func triangle(t0, t1, t2 r3.Vector, canvas *image.RGBA, c color.RGBA) {
-	//line(t0, t1, canvas, c)
-	//line(t1, t2, canvas, c)
-	//line(t2, t0, canvas, c)
 	if t0.Y == t1.Y && t0.Y == t2.Y {
 		return
 	}
@@ -120,18 +67,18 @@ func triangle(t0, t1, t2 r3.Vector, canvas *image.RGBA, c color.RGBA) {
 	var alpha, beta float64
 	var A, B r3.Vector
 
-	for i := 0; i < int(total_height); i++ {
-		second_half := float64(i) > (t1.Y-t0.Y) || t1.Y == t0.Y // a boolean value
+	for i := 0.; i <= total_height; i++ {
+		second_half := i > t1.Y-t0.Y || t1.Y == t0.Y // a boolean value
 		if second_half {
 			seg_height = t2.Y - t1.Y
 		} else {
 			seg_height = t1.Y - t0.Y
 		}
-		alpha = float64(i) / float64(total_height)
+		alpha = i / total_height
 		if second_half {
-			beta = (float64(i) - (t1.Y - t0.Y)) / seg_height
+			beta = (i - (t1.Y - t0.Y)) / seg_height
 		} else {
-			beta = float64(i) / seg_height
+			beta = i / seg_height
 		}
 		A = r3.Vector.Add(t0, r3.Vector.Mul(r3.Vector.Sub(t2, t0), alpha))
 		if second_half {
@@ -143,8 +90,8 @@ func triangle(t0, t1, t2 r3.Vector, canvas *image.RGBA, c color.RGBA) {
 		if A.X > B.X {
 			A, B = B, A
 		}
-		for j := A.X; j <= B.X; j++ {
-			canvas.Set(int(j), int(t0.Y+float64(i)), c)
+		for j := int(A.X); j <= int(B.X); j++ {
+			canvas.Set(j, int(t0.Y+i), c)
 		}
 	}
 }
@@ -152,8 +99,8 @@ func triangle(t0, t1, t2 r3.Vector, canvas *image.RGBA, c color.RGBA) {
 func main() {
 	w, h := 800, 800
 	fw, fh := 800., 800.
-	//w, h := 200, 200
-	//fw, fh := 200., 200.
+	//w, h := 150, 150
+	//fw, fh := 150., 150.
 	_, _, _, _ = w, h, fw, fh
 
 	img := image.NewRGBA(image.Rect(0, 0, w, h))
@@ -174,30 +121,43 @@ func main() {
 	// Set black background, otherwise it's transparert and appears like a checkerboard pattern.
 	for i := 0; i < w; i++ {
 		for j := 0; j < h; j++ {
-			img.Set(i, j, color.RGBA{0, 0, 0, 255})
+			img.Set(i, j, color.RGBA{0, 0, 100, 255})
 		}
 	}
 
 	Model := readObj("obj/human_head.obj")
 	rand.Seed(1)
 
+	lightDir := r3.Vector{0., 0., -1.}
+
 	for i := 0; i < Model.Nfaces; i++ {
 		face := Model.Faces[i]
-		var screen_coords []r3.Vector
+		var screen_coords, world_coords []r3.Vector
 
 		var tmp []int
 		for i := range face.components {
 			tmp = append(tmp, face.components[i][0])
 		}
 
+		// Took me a while to find out, but screen coordinates must be integers (well, duuh?!),
+		// Otherwise weird artifacts of points not rendering between vertices are encountered -.-
 		for j := 0; j < 3; j++ {
-			world_coords := Model.Verts[tmp[j]-1].coords
+			v := Model.Verts[tmp[j]-1].coords
 			screen_coords = append(screen_coords, r3.Vector{
-				(world_coords.X + 1.) * fw / 2.,
-				(world_coords.Y + 1.) * fh / 2.,
+				float64(int((v.X + 1.) * fw / 2.)),
+				float64(int((v.Y + 1.) * fh / 2.)),
 				0.})
+			world_coords = append(world_coords, v)
 		}
-		triangle(screen_coords[0], screen_coords[1], screen_coords[2], img, color.RGBA{uint8(rand.Intn(255)), uint8(rand.Intn(255)), uint8(rand.Intn(255)), 255})
+		a := world_coords[0]
+		b := world_coords[1]
+		c := world_coords[2]
+		n := r3.Vector.Cross(r3.Vector.Sub(c, b), r3.Vector.Sub(b, a))
+		n = r3.Vector.Normalize(n)
+		intensity := r3.Vector.Dot(n, lightDir)
+		if intensity >= 0 {
+			triangle(screen_coords[0], screen_coords[1], screen_coords[2], img, color.RGBA{uint8(intensity * 255), uint8(intensity * 255), uint8(intensity * 255), 255})
+		}
 	}
 
 	img = flipVertically(img)
